@@ -1,0 +1,5 @@
+apscheduler==3.6.0
+flask==1.0.3
+flask_sqlalchemy==2.4.0
+
+git+git://github.com/vrachieru/xiaomi-flower-care-api/@1.0#egg=flowercare

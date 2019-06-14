@@ -1,0 +1,40 @@
+{
+    "xData": {{ timestamps | tojson }},
+    "datasets": [{
+        "name": "Temperature",
+        "data": {{ temperature | safe }},
+        "min": 8,
+        "max": 32,
+        "unit": "°C",
+        "type": "area",
+        "color": "#f48e5b",
+        "valueDecimals": 1
+    }, {
+        "name": "Moisture",
+        "data": {{ moisture | safe }},
+        "min": 15,
+        "max": 60,
+        "unit": "%",
+        "type": "area",
+        "color": "#7cb5ec",
+        "valueDecimals": 0
+    }, {
+        "name": "Light",
+        "data": {{ light | safe }},
+        "min": 2500,
+        "max": 35000,
+        "unit": "lux",
+        "type": "area",
+        "color": "#f4f45b",
+        "valueDecimals": 0
+    }, {
+        "name": "Conductivity",
+        "data": {{ conductivity | safe }},
+        "min": 350,
+        "max": 2000,
+        "unit": "µS/cm",
+        "type": "area",
+        "color": "#843a31",
+        "valueDecimals": 0
+    }]
+}

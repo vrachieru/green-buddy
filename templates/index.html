@@ -1,0 +1,335 @@
+<html>
+    <head>
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script src="https://code.highcharts.com/modules/data.js"></script>
+        <style>
+            body {
+                background: #f7f8f9;
+            }
+
+            #container {
+                min-width: 320px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .metric {
+                background: #ffffff;
+                margin: 20px auto;
+            }
+
+            .stats {
+                text-align: center;
+                display: flex;
+                flex-direction: row;
+                border-bottom: 1px solid #e9ecef;
+            }
+
+            .stats-item {
+                margin: 10px 0;
+                display: flex;
+                flex: 1;
+                flex-direction: column;
+            }
+
+            .stats-item:not(:last-child) {
+                border-right: 1px solid #e9ecef
+            }
+
+            .stats-value {
+                font-size: 20px;
+                margin-bottom: 5px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .chart {
+                height: 220px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="container">
+
+            <div id="live" class="metric">
+                <div class="stats">
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Minimum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Average</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="temperature" class="metric">
+                <div class="stats">
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Minimum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Average</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                </div>
+                <div id="temperature-chart" class="chart"></div>
+            </div>
+
+            <div id="moisture" class="metric">
+                <div class="stats">
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Minimum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Average</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                </div>
+                <div id="moisture-chart" class="chart"></div>
+            </div>
+
+            <div id="light" class="metric">
+                <div class="stats">
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Minimum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Average</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                </div>
+                <div id="light-chart" class="chart"></div>
+            </div>
+
+            <div id="conductivity" class="metric">
+                <div class="stats">
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Minimum</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Average</div>
+                    </div>
+                    <div class="stats-item">
+                        <div class="stats-value">0</div>
+                        <div class="stats-label">Maximum</div>
+                    </div>
+                </div>
+                <div id="conductivity-chart" class="chart"></div>
+            </div>
+	</div>
+
+        <script>
+        /**
+         * In order to synchronize tooltips and crosshairs, override the
+         * built-in events with handlers defined on the parent element.
+         */
+        ['mousemove', 'touchmove', 'touchstart', 'resize'].forEach(function (eventType) {
+            document.getElementById('container').addEventListener(
+                eventType,
+                function (e) {
+                    var chart,
+                        point,
+                        i,
+                        event;
+
+                    for (i = 0; i < Highcharts.charts.length; i = i + 1) {
+                        chart = Highcharts.charts[i];
+                        // Find coordinates within the chart
+                        event = chart.pointer.normalize(e);
+                        // Get the hovered point
+                        point = chart.series[0].searchPoint(event, true);
+
+                        if (point) {
+                            point.highlight(e);
+                        }
+                    }
+                }
+            );
+        });
+
+        /**
+         * Override the reset function, we don't need to hide the tooltips and
+         * crosshairs.
+         */
+        Highcharts.Pointer.prototype.reset = function () {
+            return undefined;
+        };
+
+        /**
+         * Highlight a point by showing tooltip, setting hover state and draw crosshair
+         */
+        Highcharts.Point.prototype.highlight = function (event) {
+            event = this.series.chart.pointer.normalize(event);
+            this.onMouseOver(); // Show the hover marker
+            this.series.chart.tooltip.refresh(this); // Show the tooltip
+            this.series.chart.xAxis[0].drawCrosshair(event, this); // Show the crosshair
+        };
+
+        /**
+         * Synchronize zooming through the setExtremes event handler.
+         */
+        function syncExtremes(e) {
+            var thisChart = this.chart;
+
+            if (e.trigger !== 'syncExtremes') { // Prevent feedback loop
+                Highcharts.each(Highcharts.charts, function (chart) {
+                    if (chart !== thisChart) {
+                        if (chart.xAxis[0].setExtremes) { // It is null while updating
+                            chart.xAxis[0].setExtremes(
+                                e.min,
+                                e.max,
+                                undefined,
+                                false,
+                                { trigger: 'syncExtremes' }
+                            );
+                        }
+                    }
+                });
+            }
+        }
+
+        // Get the data. The contents of the data file can be viewed at
+        Highcharts.ajax({
+            url: window.location.origin + '/json?period={{ period }}',
+            dataType: 'text',
+            success: function (activity) {
+
+                activity = JSON.parse(activity);
+                activity.datasets.forEach(function (dataset, i) {
+
+                    var liveDiv = document.getElementById("live");
+                    liveDiv.getElementsByClassName('stats-value')[i].textContent = dataset.data[dataset.data.length-1] + ' ' + dataset.unit;
+                    liveDiv.getElementsByClassName('stats-label')[i].textContent = dataset.min + '-' + dataset.max;
+
+                    // Add X values
+                    //dataset.data = Highcharts.map(dataset.data, function (val, j) {
+                    //    return [activity.xData[j], val];
+                    //});
+
+                    //var chartDiv = document.createElement('div');
+                    //chartDiv.className = 'chart';
+                    //document.getElementById('container').appendChild(chartDiv);
+
+
+                    // var chartDiv = document.getElementById(dataset.name.toLowerCase() + '-chart');
+
+                    var metricDiv = document.getElementById(dataset.name.toLowerCase());
+
+                    var stats = metricDiv.getElementsByClassName('stats-value');
+                    var avg = arr => arr.reduce((a,b) => a + b, 0) / arr.length
+                    stats[0].textContent = Math.min(...dataset.data) + ' ' + dataset.unit;
+                    stats[1].textContent = avg(dataset.data).toFixed(1) + ' ' + dataset.unit;
+                    stats[2].textContent = Math.max(...dataset.data) + ' ' + dataset.unit;
+
+                    var chartDiv = metricDiv.getElementsByClassName('chart')[0];
+
+                    Highcharts.chart(chartDiv, {
+                        chart: {
+                            marginLeft: 40, // Keep all charts left aligned
+                            spacingTop: 20,
+                            spacingBottom: 20
+                        },
+                        title: {
+                            text: ''
+                        //    text: dataset.name,
+                        //    align: 'left',
+                        //    margin: 0,
+                        //    x: 30
+                        },
+                        credits: {
+                            enabled: false
+                        },
+                        legend: {
+                            enabled: false
+                        },
+                        xAxis: {
+                            categories: activity.xData,
+                            crosshair: true,
+                            events: {
+                                setExtremes: syncExtremes
+                            },
+                            labels: {
+                                format: '{value}'
+                            }
+                        },
+                        yAxis: {
+                            title: {
+                                text: null
+                            },
+                            plotBands: [
+                                {
+                                    color: dataset.color,
+                                    from: dataset.min,
+                                    to: dataset.min
+                                },
+                                {
+                                    color: dataset.color,
+                                    from: dataset.max,
+                                    to: dataset.max
+                                }
+                            ]
+                        },
+                        tooltip: {
+                            positioner: function () {
+                                return {
+                                    // right aligned
+                                    x: this.chart.chartWidth - this.label.width,
+                                    y: 10 // align to title
+                                };
+                            },
+                            borderWidth: 0,
+                            backgroundColor: 'none',
+                            pointFormat: '{point.y}',
+                            headerFormat: '',
+                            shadow: false,
+                            style: {
+                                fontSize: '18px'
+                            },
+                            valueDecimals: dataset.valueDecimals
+                        },
+                        series: [{
+                            data: dataset.data,
+                            name: dataset.name,
+                            type: dataset.type,
+                            color: dataset.color,
+                            fillOpacity: 0.3,
+                            tooltip: {
+                                valueSuffix: ' ' + dataset.unit
+                            }
+                        }]
+                    });
+                });
+            }
+        });
+        </script>
+    </body>
+</html>
